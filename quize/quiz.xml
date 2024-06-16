@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+    <question id="1">
+        <text>What is the capital of France?</text>
+        <options>
+            <option>A) London</option>
+            <option>B) Paris</option>
+            <option>C) Rome</option>
+            <option>D) Berlin</option>
+        </options>
+        <correctOption>B</correctOption>
+    </question>
+    <question id="2">
+        <text>What is the largest planet in our solar system?</text>
+        <options>
+            <option>A) Earth</option>
+            <option>B) Jupiter</option>
+            <option>C) Saturn</option>
+            <option>D) Mars</option>
+        </options>
+        <correctOption>B</correctOption>
+    </question>
+    <question id="3">
+        <text>Who wrote "Romeo and Juliet"?</text>
+        <options>
+            <option>A) William Shakespeare</option>
+            <option>B) Jane Austen</option>
+            <option>C) Charles Dickens</option>
+            <option>D) Mark Twain</option>
+        </options>
+        <correctOption>A</correctOption>
+    </question>
+    <question id="4">
+        <text>What is the chemical symbol for water?</text>
+        <options>
+            <option>A) Wa</option>
+            <option>B) H2O</option>
+            <option>C) O2</option>
+            <option>D) H2</option>
+        </options>
+        <correctOption>B</correctOption>
+    </question>
+    <question id="5">
+        <text>Which of these is a primary color?</text>
+        <options>
+            <option>A) Purple</option>
+            <option>B) Yellow</option>
+            <option>C) Brown</option>
+            <option>D) Orange</option>
+        </options>
+        <correctOption>B</correctOption>
+    </question>
+    <question id="6">
+        <text>What is the powerhouse of the cell?</text>
+        <options>
+            <option>A) Nucleus</option>
+            <option>B) Ribosome</option>
+            <option>C) Mitochondria</option>
+            <option>D) Golgi Apparatus</option>
+        </options>
+        <correctOption>C</correctOption>
+    </question>
+</quiz>

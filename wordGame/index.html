@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Game</title>
+    <style>
+      form {
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+        display: inline-block;
+      }
+
+      label {
+        font-weight: bold;
+      }
+
+      input {
+        width: 200px;
+        padding: 5px;
+        margin-right: 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+
+      button {
+        padding: 8px 15px;
+        background-color: #12f543;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #e8ec1c;
+      }
+
+      #inserted_word {
+        margin-top: 10px;
+        font-size: 18px;
+      }
+
+      #attempt_char {
+        margin-top: 10px;
+        font-size: 16px;
+        font-style: italic;
+      }
+
+      #total_attempt {
+        margin-top: 10px;
+        font-size: 20px;
+        color: #007bff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <form>
+      <label> Give a character : </label>
+      <input
+        name="word"
+        type="text"
+        id="word"
+        oninput="checkWord()"
+        maxlength="1"
+      />
+    </form>
+
+    <h5 id="inserted_word"></h5>
+    <h5 id="attempt_char">Attempt characters are =></h5>
+    <h4 id="total_attempt"></h4>
+    <h4 id="game_end"></h4>
+    <h4 id="final_result"></h4>
+
+    <script>
+      let buffer = [];
+      let present_word = null;
+      let present_word_obj = {};
+      let char_array = [];
+      let count = 0;
+      let life = 0;
+      let total_game = 0;
+      let win = 0;
+
+      const getWord = () => {
+        present_word = buffer.pop();
+        count = 0;
+        life = 10;
+        present_word_obj = {};
+        char_array = [];
+
+        for (let i = 0; i < present_word.length; i++) {
+          const char = present_word[i];
+          if (!present_word_obj[char]) {
+            present_word_obj[char] = [];
+          }
+          present_word_obj[char].push(i);
+          char_array.push("_");
+        }
+        total_game++;
+        document.getElementById("attempt_char").innerText =
+          "Attempted Words are : ";
+        document.getElementById("game_end").innerText = "";
+        document.getElementById("final_result").innerText = "";
+        edith5tag("");
+        document.getElementById("word").disabled = false;
+
+        if (buffer.length < 1) callDB(5);
+
+        console.log(present_word);
+        console.log(buffer.length);
+      };
+
+      async function callDB(c) {
+        const temp_word = await fetch("fetch.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: "p=" + String(c),
+        });
+
+        buffer.unshift(...(await temp_word.text()).split(","));
+        console.log(buffer);
+      }
+
+      async function edith5tag(c) {
+        document.getElementById("inserted_word").innerText =
+          char_array.join(" ");
+        let temp_string = document.getElementById("attempt_char").innerText;
+        temp_string = temp_string.concat(c, " | ");
+        document.getElementById("attempt_char").innerText = temp_string;
+        document.getElementById(
+          "total_attempt"
+        ).innerText = `Life Left = ${life}`;
+      }
+
+      const checkWord = async () => {
+        let c1 = document.getElementById("word").value;
+        let letterPattern = /^[a-zA-Z]$/;
+        if (!letterPattern.test(c1)) {
+          document.getElementById("word").value = "";
+          return;
+        }
+
+        const positions = present_word_obj[c1.toLowerCase()];
+        if (positions != null) {
+          const randomIndex = Math.floor(Math.random() * positions.length);
+          const randomPosition = positions[randomIndex];
+          char_array[randomPosition] = c1.toLowerCase();
+          positions.splice(randomIndex, 1);
+          count++;
+          if (positions.length === 0) {
+            delete present_word_obj[c1.toLowerCase()];
+          }
+        } else {
+          life--;
+        }
+
+        document.getElementById("word").value = "";
+        await edith5tag(c1);
+
+        if (count === present_word.length) {
+          document.getElementById("game_end").innerText = "You WIN the Game";
+          document.getElementById("word").disabled = true;
+          win += life;
+          document.getElementById(
+            "final_result"
+          ).innerText = `Average Score = ${win / total_game}`;
+          setTimeout(askToContinue, 0);
+        } else if (life <= 0) {
+          document.getElementById("game_end").innerText = "You LOOSE the Game";
+          document.getElementById("word").disabled = true;
+          document.getElementById(
+            "final_result"
+          ).innerText = `Average Score = ${win / total_game}`;
+          setTimeout(askToContinue, 0);
+        }
+      };
+
+      const askToContinue = () => {
+        const playAgain = confirm("Do you want to continue playing?");
+        if (playAgain) {
+          getWord();
+        } else {
+          document.body.innerHTML = "";
+          let finalResult = document.createElement("h4");
+          finalResult.textContent = `Average Score = ${win / total_game}`;
+          document.body.appendChild(finalResult);
+        }
+      };
+
+      async function startGame() {
+        await callDB(5);
+        getWord();
+      }
+
+      document.getElementById("word").disabled = true;
+      startGame();
+    </script>
+  </body>
+</html>

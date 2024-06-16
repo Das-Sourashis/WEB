@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz App</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+      .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .question {
+        margin-bottom: 20px;
+      }
+      .options {
+        margin-bottom: 20px;
+        text-align: left;
+        padding-left: 40%;
+      }
+      .button-container {
+        text-align: center;
+      }
+      .center {
+        text-align: center;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 0 5px;
+        border: none;
+        border-radius: 4px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="start-container" class="center">
+        <h2>Quiz App</h2>
+        <label for="roll_no">Enter Your Roll No :</label>
+        <input type="text" id="roll_no" />
+        <br /><br />
+        <label for="password">Enter Password:</label>
+        <input type="password" id="password" />
+        <br /><br />
+        <button onclick="fetchQuizData()">Start Quiz</button>
+      </div>
+      <div id="quiz-container" style="display: none" class="center">
+        <div class="question" id="question-text"></div>
+        <div class="options" id="options-container"></div>
+        <div class="button-container">
+          <button onclick="prevQuestion()" id="prev-button">< Previous</button>
+          <button onclick="nextQuestion()" id="next-button">Next ></button>
+          <br /><br />
+          <button
+            onclick="submitQuiz()"
+            id="submit-button"
+            disabled
+            style="background-color: #cccccc"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+      <div id="result-container" style="display: none" class="center">
+        <h3>Quiz Result</h3>
+        <div id="result-text"></div>
+      </div>
+    </div>
+
+    <script>
+      let quizData;
+      let currentQuestionIndex = 0;
+
+      function fetchQuizData() {
+        var password = document.getElementById("password").value;
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+              const parser = new DOMParser();
+              const xmlDoc = parser.parseFromString(
+                xhr.responseText,
+                "text/xml"
+              );
+              const questions = xmlDoc.getElementsByTagName("question");
+              quizData = [];
+              for (let i = 0; i < questions.length; i++) {
+                const question = questions[i];
+                const questionText =
+                  question.getElementsByTagName("text")[0].textContent;
+                const options = [];
+                const optionElements = question.getElementsByTagName("option");
+                for (let j = 0; j < optionElements.length; j++) {
+                  options.push(optionElements[j].textContent);
+                }
+                const correctOption =
+                  question.getElementsByTagName("correctOption")[0].textContent;
+                quizData.push({
+                  question: questionText,
+                  options: options,
+                  correctOption: correctOption.charCodeAt(0) - 65,
+                  selectedOption: undefined,
+                });
+              }
+              console.log(quizData);
+              startQuiz();
+            } else if (xhr.status === 404) {
+              alert("XML file not found");
+            } else if (xhr.status === 401) {
+              alert("Incorrect password");
+            } else {
+              console.error("Error fetching quiz data:", xhr.statusText);
+            }
+          }
+        };
+        xhr.open("GET", "get_questions.php?password=" + password, true);
+        xhr.send();
+      }
+
+      function startQuiz() {
+        const roll_no = document.getElementById("roll_no").value;
+        if (roll_no.trim() === "") {
+          alert("Please enter your Roll No.");
+          return;
+        }
+        document.getElementById("start-container").style.display = "none";
+        document.getElementById("quiz-container").style.display = "block";
+        showQuestion();
+      }
+
+      function showQuestion() {
+        const currentQuestion = quizData[currentQuestionIndex];
+        document.getElementById("question-text").textContent =
+          currentQuestion.question;
+        const optionsContainer = document.getElementById("options-container");
+        optionsContainer.innerHTML = "";
+        currentQuestion.options.forEach((option, index) => {
+          const optionRadio = document.createElement("input");
+          optionRadio.type = "radio";
+          optionRadio.name = "option";
+          optionRadio.value = index;
+          optionRadio.id = "option" + index;
+          optionRadio.onchange = () => chooseOption(index);
+          optionsContainer.appendChild(optionRadio);
+
+          const optionLabel = document.createElement("label");
+          optionLabel.textContent = option;
+          optionLabel.htmlFor = "option" + index;
+          optionsContainer.appendChild(optionLabel);
+
+          optionsContainer.appendChild(document.createElement("br"));
+        });
+
+        const prevButton = document.getElementById("prev-button");
+        const nextButton = document.getElementById("next-button");
+        if (currentQuestionIndex === 0) {
+          prevButton.disabled = true;
+          prevButton.style.backgroundColor = "#CCCCCC";
+        } else {
+          prevButton.disabled = false;
+          prevButton.style.backgroundColor = "";
+        }
+        if (currentQuestionIndex === quizData.length - 1) {
+          nextButton.disabled = true;
+          nextButton.style.backgroundColor = "#CCCCCC";
+          document.getElementById("submit-button").style.display =
+            "inline-block";
+          enableSubmit();
+        } else {
+          nextButton.disabled = false;
+          nextButton.style.backgroundColor = "";
+          document.getElementById("submit-button").style.display = "none";
+        }
+        highlightChosenOptions();
+      }
+
+      function highlightChosenOptions() {
+        const chosenOptionIndex = quizData[currentQuestionIndex].selectedOption;
+        if (chosenOptionIndex !== undefined) {
+          document.getElementById("option" + chosenOptionIndex).checked = true;
+        }
+      }
+
+      function chooseOption(index) {
+        const optionRadio = document.getElementById("option" + index);
+        console.log(index);
+        if (quizData[currentQuestionIndex].selectedOption === index) {
+          optionRadio.checked = false;
+          quizData[currentQuestionIndex].selectedOption = undefined;
+        } else {
+          quizData[currentQuestionIndex].selectedOption = parseInt(index);
+        }
+        enableSubmit();
+        console.log(quizData);
+      }
+
+      function prevQuestion() {
+        if (currentQuestionIndex > 0) {
+          currentQuestionIndex--;
+          showQuestion();
+        }
+      }
+
+      function nextQuestion() {
+        if (currentQuestionIndex < quizData.length - 1) {
+          currentQuestionIndex++;
+          showQuestion();
+        }
+      }
+
+      function enableSubmit() {
+        if (currentQuestionIndex === quizData.length - 1) {
+          const allAnswered = quizData.every(
+            (question) => question.selectedOption !== undefined
+          );
+          document.getElementById("submit-button").disabled = !allAnswered;
+          console.log(allAnswered);
+          if (allAnswered) {
+            document.getElementById("submit-button").style.backgroundColor =
+              "#007bff";
+          } else {
+            document.getElementById("submit-button").style.backgroundColor =
+              "#CCCCCC";
+          }
+        }
+      }
+
+      function submitQuiz() {
+        const roll_no = document.getElementById("roll_no").value;
+        const quizResults = [];
+
+        quizData.forEach((question, index) => {
+          const questionNumber = index + 1;
+          const selectedOption = question.selectedOption;
+          const correctOption = question.correctOption;
+          quizResults.push({
+            questionNumber: questionNumber,
+            selectedOption: selectedOption,
+            correctOption: correctOption,
+          });
+        });
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "save_quiz_result.php", true);
+        xhr.setRequestHeader("Content-type", "application/json");
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            console.log(response);
+            displayQuizResult(response);
+          }
+        };
+        xhr.send(
+          JSON.stringify({ roll_no: roll_no, quizResults: quizResults })
+        );
+      }
+
+      function displayQuizResult(response) {
+        const resultText = `Hello Student<br>Roll No : ${response.roll_no}<br> your attempt status is: <br><br>`;
+        const scoreText = `Correct: ${response.correctCount}<br>Wrong: ${response.wrongCount}<br>Not Total Questions: ${response.total}`;
+        document.getElementById("result-text").innerHTML =
+          resultText + scoreText;
+        document.getElementById("quiz-container").style.display = "none";
+        document.getElementById("result-container").style.display = "block";
+      }
+    </script>
+  </body>
+</html>
